@@ -1,14 +1,12 @@
-from linear_model import LinearModel
-from neural_network_model import NeuralNetworkModel
+from .random import RandomModel
 
 class ModelManager:
     def __init__(self):
         self.current_model = None
         self.model_factory = {
-            'linear': LinearModel,
-            'neural_network': NeuralNetworkModel,
+            'constant': RandomModel,
+            # agregar mas modelos
         }
-
 
     def load_model(self, model_type, model_file):
         self.current_model = self.model_factory.get(model_type)
@@ -20,7 +18,7 @@ class ModelManager:
 
 
     def predict(self, input_data):
-        if self.current_model:
-            return self.current_model.predict(input_data)
-        else:
+        if not self.current_model:
             raise Exception("No model loaded")
+        
+        return self.current_model.predict(input_data)

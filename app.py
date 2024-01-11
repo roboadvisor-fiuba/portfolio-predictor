@@ -1,0 +1,13 @@
+from flask import Flask
+from flask_restx import Api
+from src.resources.model import api as model_api
+from src.resources.health import HealthCheck
+
+app = Flask(__name__)
+api = Api(app)
+
+api.add_namespace(model_api)
+api.add_resource(HealthCheck, '/health')
+
+if __name__ == '__main__':
+    app.run(debug=True)
