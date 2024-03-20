@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_restx import Api
-from resources.prediction_model import api as model_api
+from resources.predictive_model import api as model_api
 from resources.health import HealthCheck
 
 app = Flask(__name__)

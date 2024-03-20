@@ -1,2 +1,7 @@
 .venv/
 __pycache__/
+ta-lib/
+*.pickle
+etc/
+.env
+stock_data.joblib
