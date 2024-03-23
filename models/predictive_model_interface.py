@@ -15,7 +15,7 @@ class PredictiveModelInterface(ABC):
         pass
 
     @abstractmethod
-    def train(self, training_data, target):
+    def fit(self, training_data, target):
         """
         Train the model with the provided training data and targets.
 

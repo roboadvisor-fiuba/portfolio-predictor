@@ -7,43 +7,63 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-def get_historical_data(ticker, start_date, end_date):
-    stock_data = yf.download(ticker, start=start_date, end=end_date)
-    return stock_data['Adj Close']
-
-def calculate_returns(stock_prices):
+def get_historical_returns(tickers, start_date, end_date):
+    stock_data = yf.download(tickers, start=start_date, end=end_date)
+    stock_prices = stock_data['Adj Close']
     return stock_prices.pct_change().dropna()
-
-def perform_linear_regression(returns):
-    X = np.arange(len(returns)).reshape(-1, 1)
-    y = returns.values.reshape(-1, 1)
-
-    model = LinearRegression()
-    model.fit(X, y)
-
-    return model.coef_[0][0]
 
 def select_best_returns(stocks_returns, k):
     selected_tickers = sorted(stocks_returns, key=stocks_returns.get, reverse=True)[:k]
     return selected_tickers
 
+class LinearRegressionModel:
+    def __init__(self):
+        self.trained = False
+
+    def fit(self, stocks_data):
+        models = {}
+        self.start_date = stocks_data.index[0]
+
+        for ticker, returns in stocks_data.items():
+            model = self.perform_linear_regression(returns)
+            models[ticker] = model
+
+        self.models = models
+        self.trained = True
+        return [model.coef_[0][0] for model in models.values()]
+
+    def predict(self, d):
+        assert self.trained, "Model must be trained before making predictions."
+
+        predictions = {}
+        X = (pd.Timestamp(d) - self.start_date).days
+        for stock, model in self.models.items():
+            predictions[stock] = model.predict([[X]])
+        
+        return predictions
+    
+    def perform_linear_regression(self, returns):
+        X = np.arange(len(returns)).reshape(-1, 1)
+        y = returns.values.reshape(-1, 1)
+        model = LinearRegression().fit(X, y)
+
+        return model
+
 def main():
     tickers = ['AAPL', 'GOOGL', 'MSFT']
-    # tickers = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0].Symbol.to_list()
     start_date = '2020-01-01'
     end_date = '2022-01-01'
+    predict_date = '2022-01-02'
     k_best_tickers = 2
 
-    stocks_returns = {}
+    stocks_data = get_historical_returns(tickers, start_date, end_date)
+    model = LinearRegressionModel()
+    slopes = model.fit(stocks_data)
+    stocks_predictions = model.predict(predict_date)
 
-    for ticker in tickers:
-        historical_data = get_historical_data(ticker, start_date, end_date)
-        returns = calculate_returns(historical_data)
-        slope = perform_linear_regression(returns)
-        stocks_returns[ticker] = slope
-
-    print(f"Returns for each stock: {stocks_returns}")
-    portfolio = select_best_returns(stocks_returns, k=k_best_tickers)
+    print(f"Slopes of each linear regression: ", slopes)
+    print(f"Predicted returns for each stock at day {predict_date}: {stocks_predictions}")
+    portfolio = select_best_returns(stocks_predictions, k=k_best_tickers)
     print(f"The selected tickers for the portfolio: {portfolio}")
 
 if __name__ == "__main__":
