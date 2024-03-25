@@ -1,7 +1,6 @@
 from flask_restx import Resource, Namespace, fields
 import joblib
 import numpy as np
-from models.linear_regression import LinearRegressionModel
 
 api = Namespace('predictve_model', description='Predictive model operations', path='/')
 current_model = None

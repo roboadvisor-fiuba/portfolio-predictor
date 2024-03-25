@@ -37,6 +37,7 @@ def handle_data(context, data):
 def analyze(context, perf):
     import matplotlib.pyplot as plt
     import numpy as np
+    import yfinance as yf
 
     df = pd.DataFrame(perf)
     start_date = '2014-01-01'
@@ -45,7 +46,7 @@ def analyze(context, perf):
     df['portfolio_returns'] = df['portfolio_value'].pct_change()
     portfolio_cumulative_returns = (1 + df['portfolio_returns']).cumprod() - 1
 
-    sp500_returns = get_sp500(start_date, end_date)
+    sp500_returns = yf.download('SPY', start=start_date, end=end_date)['Adj Close'].pct_change().dropna()
     sp500_cumulative_returns = (1 + sp500_returns).cumprod() - 1
     
     sharpe_ratio = df['sharpe'].mean()
@@ -67,9 +68,3 @@ def analyze(context, perf):
     
     print("Sharpe Ratio:", sharpe_ratio)
     print("Max Drawdown (%):", max_drawdown_percentage)
-
-
-def get_sp500(start_date, end_date):
-    import yfinance as yf
-    
-    return yf.download('SPY', start=start_date, end=end_date)['Adj Close'].pct_change().dropna()
