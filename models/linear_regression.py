@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+from predictive_model_interface import PredictiveModelInterface
 
-class LinearRegressionModel:
+class LinearRegressionModel(PredictiveModelInterface):
     def __init__(self):
         self.trained = False
 
@@ -32,6 +33,9 @@ class LinearRegressionModel:
         
         return predictions
     
+    def partial_fit(self, new_data, new_target):
+        pass
+
     def perform_linear_regression(self, returns):
         X = np.arange(len(returns)).reshape(-1, 1)
         y = returns.values.reshape(-1, 1)
