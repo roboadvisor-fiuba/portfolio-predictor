@@ -16,24 +16,15 @@ model = joblib.load("../linear_regression_model.plk")
 # 1. reemplazar stock por todo lo que haya sido entrenado
 
 def initialize(context):
-    # sp500_symbols = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0].Symbol.to_list()
-    context.asset = symbol('AAPL') # TODO: PREDICE PARA TODOS LOS ASSETS QUE FUE ENTRENADO
+    context.asset = symbol('AAPL') # TODO: test sobre todos los assets en los que fue entrenado el modelo
     context.set_commission(commission.PerShare(cost=0.0075, min_trade_cost=1.0)) # TODO: ver comision MERVAL
     context.set_slippage(slippage.VolumeShareSlippage()) # TODO: ver slippage MERVAL
     context.i = 0
 
-
 def handle_data(context, data):
-    # TODO: usar modelo para predecir precio de stocks. Usar datos del episodio actual para predecir el valor en el siguiente.
-    # En base una regla de decision, comprar/vender stocks correspondientes.
-
-    # order_target(ticker, 100) para comprar 100 acciones de un ticker
-    # record(key=value) para almacenar datos en el dataframe de resultados
-
-    # en cada ep, evaluar si la prediccion es positiva (con un margen de seguridad) y si es, comprar. Si no, vender.
     context.i += 1
-    # price = data.current(context.asset, 'price') solo sirve si quiero ajustar el modelo
-    prediction = model.predict(context.i, context.asset.symbol) # modelo se entreno con indices 0 a 730, como uso los indices? tomar en cuenta  online training en cada episodio?
+    prediction = model.predict(context.i, context.asset.symbol) 
+    # FIX: modelo se entreno con indices 0 a 730, como usarlo? tomar en cuenta online training en cada episodio?
     action=None
     if prediction > 0:
         order_target(context.asset, 100)
