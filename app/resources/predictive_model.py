@@ -1,16 +1,18 @@
 from flask_restx import Resource, Namespace, fields
 import joblib
+import numpy as np
+from models.linear_regression import LinearRegressionModel
 
-api = Namespace('prediction_model', description='Prediction model operations', path='/')
+api = Namespace('predictve_model', description='Predictive model operations', path='/')
 current_model = None
 
-load_fields = api.model('PredictionModel', {
-    'model_file': fields.String(required=True, description='File path to load the model')
+load_fields = api.model('PredictiveModel', {
+    'path': fields.String(required=True, description='Path to load the model file')
 })
-predict_fields = api.model('PredictionModel', {
+predict_fields = api.model('PredictiveModel', {
     'input_data': fields.List(fields.Float, required=True, description='Input data for prediction')
 })
-training_fields = api.model('PredictionModel', {
+training_fields = api.model('PredictiveModel', {
     'input_data': fields.List(fields.Float, required=True, description='Input data for prediction'),
     'labels': fields.List(fields.Float, required=True, description='Labels for training')
 })
@@ -21,9 +23,9 @@ class LoadModel(Resource):
     def post(self):
         global current_model
         data = api.payload
-        model_file = data['model_file']
+        model_file = data['path']
         try:
-            current_model = joblib.load(model_file)
+            current_model = joblib.load(model_file) # EL PATH DEPENDE DE DONDE SE HAYA EJECUTADO APP.PY (os.getcwd())
         except FileNotFoundError:
             return {"message": "File not found"}, 400
         return {"message": "Model loaded successfully"}
@@ -38,6 +40,11 @@ class Predict(Resource):
         if not current_model:
             return {"message": "No model loaded"}, 400
         prediction = current_model.predict(input_data)
+
+        for key, value in prediction.items():
+            if isinstance(value, np.ndarray):
+                prediction[key] = value.tolist()
+
         return {"prediction": prediction}
 
 @api.route('/partial_fit')

@@ -6,6 +6,7 @@ import yfinance as yf
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+import joblib
 
 def get_historical_returns(tickers, start_date, end_date):
     stock_data = yf.download(tickers, start=start_date, end=end_date)
@@ -65,6 +66,8 @@ def main():
     print(f"Predicted returns for each stock at day {predict_date}: {stocks_predictions}")
     portfolio = select_best_returns(stocks_predictions, k=k_best_tickers)
     print(f"The selected tickers for the portfolio: {portfolio}")
+
+    joblib.dump(model, 'linear_regression_model.plk')
 
 if __name__ == "__main__":
     main()
