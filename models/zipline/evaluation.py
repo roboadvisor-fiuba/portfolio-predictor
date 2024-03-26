@@ -9,17 +9,17 @@ import pyfolio as pf
 import joblib
 import sys        
 from os import path
-sys.path.insert(0, path.abspath('..')) # needed for joblib loading
+sys.path.insert(0, path.abspath('../..')) # needed for joblib loading
 
 model = joblib.load("../linear_regression_model.plk")
 
-# 1. reemplazar stock por todo lo que haya sido entrenado
 
 def initialize(context):
     context.asset = symbol('AAPL') # TODO: test sobre todos los assets en los que fue entrenado el modelo
     context.set_commission(commission.PerShare(cost=0.0075, min_trade_cost=1.0)) # TODO: ver comision MERVAL
     context.set_slippage(slippage.VolumeShareSlippage()) # TODO: ver slippage MERVAL
     context.i = 0
+
 
 def handle_data(context, data):
     context.i += 1

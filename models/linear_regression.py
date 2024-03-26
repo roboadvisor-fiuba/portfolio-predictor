@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from predictive_model_interface import PredictiveModelInterface
+from models.predictive_model_interface import PredictiveModelInterface
 
 class LinearRegressionModel(PredictiveModelInterface):
     def __init__(self):
@@ -19,17 +19,17 @@ class LinearRegressionModel(PredictiveModelInterface):
         self.trained = True
         return [model.coef_[0][0] for model in models.values()]
 
-    def predict(self, d, stock=None):
+    def predict(self, d, ticker=None):
         assert self.trained, "Model must be trained before making predictions."
 
         predictions = {}
         X = (pd.Timestamp(d) - self.start_date).days
 
-        if stock:
-            return self.models[stock].predict([[X]])
+        if ticker:
+            return self.models[ticker].predict([[X]])
 
-        for stock, model in self.models.items():
-            predictions[stock] = model.predict([[X]])
+        for ticker, model in self.models.items():
+            predictions[ticker] = model.predict([[X]])
         
         return predictions
     

@@ -1,6 +1,9 @@
 import yfinance as yf
 import joblib
-from linear_regression import LinearRegressionModel
+import sys        
+from os import path
+sys.path.insert(0, path.abspath('..')) # needed for import linear_regression
+from models.linear_regression import LinearRegressionModel
 
 def get_historical_returns(tickers, start_date, end_date):
     stock_data = yf.download(tickers, start=start_date, end=end_date)
