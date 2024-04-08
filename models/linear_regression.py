@@ -9,8 +9,8 @@ class LinearRegressionModel(PredictiveModelInterface):
 
     def fit(self, stocks_data):
         models = {}
-        self.start_date = stocks_data.index[0]
-
+        self.start_timestamp = pd.Timestamp(stocks_data.index[0])
+        
         for ticker, returns in stocks_data.items():
             model = self.perform_linear_regression(returns)
             models[ticker] = model
@@ -23,7 +23,7 @@ class LinearRegressionModel(PredictiveModelInterface):
         assert self.trained, "Model must be trained before making predictions."
 
         predictions = {}
-        X = (pd.Timestamp(d) - self.start_date).days
+        X = (pd.Timestamp(d) - self.start_timestamp).days # days since start of training data
 
         if ticker:
             return self.models[ticker].predict([[X]])
