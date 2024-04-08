@@ -2,14 +2,14 @@ from flask_restx import Resource, Namespace, fields
 import joblib
 import numpy as np
 
-api = Namespace('predictve_model', description='Predictive model operations', path='/')
+api = Namespace('predictive_model', description='Predictive model operations', path='/')
 current_model = None
 
 load_fields = api.model('PredictiveModel', {
     'path': fields.String(required=True, description='Path to load the model file')
 })
 predict_fields = api.model('PredictiveModel', {
-    'input_data': fields.List(fields.Float, required=True, description='Input data for prediction')
+    'date': fields.List(fields.Float, required=True, description='Date for prediction')
 })
 training_fields = api.model('PredictiveModel', {
     'input_data': fields.List(fields.Float, required=True, description='Input data for prediction'),
@@ -35,7 +35,7 @@ class Predict(Resource):
     def post(self):
         global current_model
         data = api.payload
-        input_data = data['input_data']
+        input_data = data['date']
         if not current_model:
             return {"message": "No model loaded"}, 400
         prediction = current_model.predict(input_data)
