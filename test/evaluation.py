@@ -1,15 +1,11 @@
-'''
-Script to evaluate a model using zipline and pyfolio
-'''
-
 from zipline.api import order_target, symbol, get_datetime
 import joblib
-import sys        
-from os import path
-sys.path.insert(0, path.abspath('../..')) # needed for joblib loading
-from models.zipline.analyze_result import analyze_result
+import sys, os
+sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../models'))
+from test.analyze_result import analyze_result
 
-model = joblib.load("../linear_regression_model.plk")
+model = joblib.load("../models/linear_regression_model.plk")
 
 def initialize(context):
     pass

@@ -1,13 +1,7 @@
-'''
-Script to evaluate a dual_moving_average strategy using zipline
-Run with: 'zipline run -f dual_moving_average.py --start 2014-1-1 --end 2018-1-1 -o dma.pickle --no-benchmark'
-'''
-
 from zipline.api import order_target, record, symbol
-import sys        
-from os import path
-sys.path.insert(0, path.abspath('../..'))
-from models.zipline.analyze_result import analyze_result
+import sys, os
+sys.path.insert(0, os.path.abspath('..'))
+from test.analyze_result import analyze_result
 
 def initialize(context):
     context.i = 0
