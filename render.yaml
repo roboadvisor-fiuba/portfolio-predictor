@@ -1,0 +1,6 @@
+services:
+  - name: portfolio-predictor
+    type: web
+    buildCommand: docker build -t portfolio-predictor .
+    startCommand: docker run -p 8000:8000 portfolio-predictor
+    healthCheckPath: /health
