@@ -6,7 +6,7 @@ import pandas as pd
 def cumulative_returns(prices):
     return (1 + prices.pct_change()).cumprod() - 1
 
-def analyze_result(perf):
+def analyze_portfolio(perf):
     df = pd.DataFrame(perf)
     pd.DataFrame.to_csv(df, 'result.csv')
 

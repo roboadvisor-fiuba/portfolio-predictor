@@ -3,12 +3,12 @@ import joblib
 import sys, os
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../models'))
-from test.analyze_result import analyze_result
+from test.analyze_portfolio import analyze_portfolio
 
 model = joblib.load("../models/linear_regression_model.plk")
 
 def initialize(context):
-    pass
+    context.previous_prediction = 0
 
 def handle_data(context, data):
     date_without_timezone = get_datetime().replace(tzinfo=None)
@@ -16,11 +16,11 @@ def handle_data(context, data):
 
     for ticker, prediction in predictions.items():
         asset = symbol(ticker)
-        # TODO: separar estrategia y definir cuánto se compra y vende
-        if prediction > 0:
-            order_target(asset, 10000)
+
+        if prediction - context.previous_prediction > 0: # TODO: agregar un umbral de seguridad
+            order_target(asset, 10000) # TODO: definir cuanto comprar y vender, estrategia de long/short
         else:
             order_target(asset, -10000)
 
 def analyze(context, perf):
-    analyze_result(perf)
+    analyze_portfolio(perf)

@@ -1,7 +1,7 @@
 from zipline.api import order_target, record, symbol
 import sys, os
 sys.path.insert(0, os.path.abspath('..'))
-from test.analyze_result import analyze_result
+from test.analyze_portfolio import analyze_portfolio
 
 def initialize(context):
     context.i = 0
@@ -29,4 +29,4 @@ def handle_data(context, data):
 
 
 def analyze(context, perf):
-    analyze_result(perf)
+    analyze_portfolio(perf)
