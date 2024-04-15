@@ -10,12 +10,11 @@ def analyze_portfolio(perf):
     df = pd.DataFrame(perf)
     pd.DataFrame.to_csv(df, 'result.csv')
 
-
     start_date = '2014-01-01'
     end_date = '2018-01-01'
     sp500_values = yf.download('SPY', start=start_date, end=end_date)['Adj Close']
     
-    portfolio_cumulative_returns = cumulative_returns( df['portfolio_value'])
+    portfolio_cumulative_returns = cumulative_returns(df['portfolio_value']) # FIX: analizar cambios como la derivada de la curva
     sp500_cumulative_returns = cumulative_returns(sp500_values)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), sharex=True)

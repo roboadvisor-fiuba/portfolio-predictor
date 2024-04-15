@@ -1,27 +1,38 @@
-from zipline.api import symbol, get_datetime, record
+from zipline.api import order_target, symbol, get_datetime
 import joblib
 import sys, os
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../models'))
-from test.analyze_model import analyze_model
+from test.analyze_portfolio import analyze_portfolio
+from test.workflow import workflow
+from functools import partial
 
 model = joblib.load("../models/linear_regression_model.plk")
 
 def initialize(context):
-    context.assets = None
+    context.prev_prediction = 0
+
+def signal(context, prediction):
+    delta = context.prev_prediction - prediction
+    context.prev_prediction = prediction
+    return delta < 0 # TODO: agregar umbral
+
+def optimizer(signals):
+    def buy(signal):
+        return 1000 if signal else 0
+    return {k: buy(v) for k, v in signals.items()}
 
 def handle_data(context, data):
-    date_without_timezone = get_datetime().replace(tzinfo=None)
-    predictions = model.predict(date_without_timezone)
-    
-    if not context.assets:
-        context.assets = predictions.keys()
-    
-    predictions_values = [prediction[0][0] for prediction in predictions.values()] # no se por que la prediccion viene dentro de dos listas
-    record(predictions=predictions_values)
+    # Get features
+    date = get_datetime().replace(tzinfo=None)
 
-    real_values = [data.current(symbol(ticker), 'price') for ticker in predictions.keys()]
-    record(values=real_values)
+    # Run workflow
+    signal_partial = partial(signal, context)
+    portfolio = workflow(date, predictor=model.predict, signal=signal_partial, optimizer=optimizer)
+
+    # Execute trades
+    for ticker, allocation in portfolio.items():
+        order_target(symbol(ticker), allocation)
 
 def analyze(context, perf):
-    analyze_model(context, perf)
+    analyze_portfolio(perf)
