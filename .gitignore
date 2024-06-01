@@ -5,3 +5,6 @@ ta-lib/
 etc/
 .env
 stock_data.joblib
+
+*.h5
+*.csv
