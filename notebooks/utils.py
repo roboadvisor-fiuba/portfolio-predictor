@@ -51,6 +51,7 @@ class MultipleTimeSeriesCV:
 
             train_idx = dates[(dates[self.date_idx] > days[train_start])
                               & (dates[self.date_idx] <= days[train_end])].index
+            print("---------{dates}")
             test_idx = dates[(dates[self.date_idx] > days[test_start])
                              & (dates[self.date_idx] <= days[test_end])].index
             if self.shuffle:
