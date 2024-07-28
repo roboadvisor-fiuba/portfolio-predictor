@@ -4,15 +4,17 @@ import numpy as np
 import models
 from datetime import datetime
 import yfinance as yf
+import pandas as pd
 
 api = Namespace('predictive_model', description='Predictive model operations', path='/')
 current_model = None
+last_training = None
 
 load_fields = api.model('PredictiveModel', {
     'path': fields.String(required=True, description='Path to load the model file')
 })
 predict_fields = api.model('PredictiveModel', {
-    'date': fields.List(fields.Float, required=True, description='Date for prediction')
+    'date': fields.List(fields.Float, required=True, description='Date as yyyy-mm-dd')
 })
 training_fields = api.model('PredictiveModel', {
     'input_data': fields.List(fields.Float, required=True, description='Input data for prediction'),
@@ -32,28 +34,185 @@ class LoadModel(Resource):
             return {"message": "File not found"}, 400
         return {"message": "Model loaded successfully"}
 
+import lightgbm as lgb
+def train_model(data):
+    lookahead = 1
+    label = 'r1_fwd'
+    features = data.columns.difference([label]).tolist()
+    data = data.loc[pd.IndexSlice[:, :], features + [label]].dropna()
+    categoricals = ['year', 'month', 'sector', 'weekday']
+    for feature in categoricals:
+        data[feature] = pd.factorize(data[feature], sort=True)[0]
+    lgb_data = lgb.Dataset(data=data[features],
+                       label=data[label],
+                       categorical_feature=categoricals,
+                       free_raw_data=False)
+    def get_lgb_params(data, t=1, best=0):
+        scope_params = ['lookahead', 'train_length', 'test_length']
+        lgb_train_params = ['learning_rate', 'num_leaves', 'feature_fraction', 'min_data_in_leaf']
+        param_cols = scope_params[1:] + lgb_train_params + ['boost_rounds']
+        df = data[data.lookahead==t].sort_values('ic', ascending=False).iloc[best]
+        return df.loc[param_cols]
+
+    base_params = dict(boosting='gbdt', objective='regression', verbose=-1)
+    lgb_daily_ic = pd.read_hdf('../notebooks/data/model_tuning.h5', 'lgb/daily_ic')
+    models = []
+    for position in range(7):
+        params = get_lgb_params(lgb_daily_ic,
+                                t=lookahead,
+                                best=position)
+
+        params = params.to_dict()
+
+        for p in ['min_data_in_leaf', 'num_leaves']:
+            params[p] = int(params[p])
+
+        num_boost_round = int(params.pop('boost_rounds'))
+        params.update(base_params)
+
+        model = lgb.train(params=params,
+                        train_set=lgb_data,
+                        num_boost_round=num_boost_round)
+        models.append(model)
+    return models
+
+def get_data(end, size):
+	n_tickers = 58 # hardcodeado
+
+	DATA_STORE = '../notebooks/data/assets.h5'
+	ohlcv = ['adj_open', 'adj_close', 'adj_low', 'adj_high', 'adj_volume']
+	with pd.HDFStore(DATA_STORE) as store:
+		prices = (store['merval/prices']
+				.loc[pd.IndexSlice[:end, :], ohlcv]
+				.tail(n=size*n_tickers)
+				.rename(columns=lambda x: x.replace('adj_', ''))
+				.swaplevel()
+				.sort_index())
+	return prices
+
+import talib
+from talib import RSI, BBANDS, MACD, ATR
+def engineer_data(data):
+    prices = data.sort_index()
+    DATA_STORE = '../notebooks/data/assets.h5'
+    with pd.HDFStore(DATA_STORE) as store:
+        metadata = (store['merval/stocks'].loc[:, ['marketcap', 'sector']])
+
+    prices.volume /= 1e3 # make vol figures a bit smaller
+    prices.index.names = ['symbol', 'date']
+    metadata.index.name = 'symbol'
+
+    # RSI
+    rsi = prices.groupby(level='symbol').close.apply(RSI)
+    prices['rsi'] = rsi.values
+
+    # BB
+    def compute_bb(close):
+        high, mid, low = BBANDS(close, timeperiod=20)
+        return pd.DataFrame({'bb_high': high, 'bb_low': low}, index=close.index)
+    bb = prices.groupby(level='symbol').close.apply(compute_bb)
+    prices['bb_high'] = bb['bb_high'].values
+    prices['bb_low'] = bb['bb_low'].values
+    prices['bb_high'] = prices.bb_high.sub(prices.close).div(prices.bb_high).apply(np.log1p)
+    prices['bb_low'] = prices.close.sub(prices.bb_low).div(prices.close).apply(np.log1p)
+
+    # NATR
+    prices['NATR'] = prices.groupby(level='symbol', 
+                                group_keys=False).apply(lambda x: 
+                                                        talib.NATR(x.high, x.low, x.close))
+    def compute_atr(stock_data):
+        df = ATR(stock_data.high, stock_data.low, 
+                stock_data.close, timeperiod=14)
+        return df.sub(df.mean()).div(df.std())
+    prices['ATR'] = (prices.groupby('symbol', group_keys=False)
+                 .apply(compute_atr))
+    
+    # PPO
+    by_ticker = prices.groupby('symbol', group_keys=False)
+    prices['ppo'] = by_ticker.close.apply(talib.PPO)
+    
+    # MACD
+    def compute_macd(close):
+        macd = MACD(close)[0]
+        return (macd - np.mean(macd))/np.std(macd)
+    prices['MACD'] = (prices
+                  .groupby('symbol', group_keys=False)
+                  .close
+                  .apply(compute_macd))
+    
+    # Combine price and metadata
+    metadata.sector = pd.factorize(metadata.sector)[0].astype(int)
+    prices = prices.join(metadata[['sector']])
+
+    # Create dummy variables
+    prices['year'] = prices.index.get_level_values('date').year
+    prices['month'] = prices.index.get_level_values('date').month
+    prices['weekday'] = prices.index.get_level_values('date').weekday
+
+    # Compute forward returns (labels)
+    by_sym = prices.groupby(level='symbol').close
+    prices[f'r1'] = by_sym.pct_change(1)
+    prices[f'r1_fwd'] = prices.groupby(level='symbol')[f'r1'].shift(-1)
+    return prices
+
 @api.route('/predict')
 class Predict(Resource):
     @api.expect(predict_fields)
     def post(self):
         global current_model
+        global last_training
         data = api.payload
-        date = data['date'] # DATE MUST COME IN FORMAT yyyy-mm
-        if not current_model:
-            return {"message": "No model loaded"}, 400
+        # Get data from the request body
+        date = data['date']
 
-        db_prediction = models.Prediction.query.filter_by(month=date).first
-        if not db_prediction:
+        # Check if there is a prediction stored
+        db_prediction = models.Prediction.query.filter_by(date=date).first()
+        if db_prediction is not None:
             return {"prediction": db_prediction.prediction}
 
-        prediction = current_model.predict(date)
-        # TODO: apply strategy to the model output
-        # The prediction should be an array with (ticker, fraction)
+        size = 34
 
-        new_prediction = models.Prediction(month=date, prediction=prediction)
+        # Check if retraining is needed
+        training_needed = not current_model or abs((last_training - pd.to_datetime(date)).days) > 63
+        if training_needed:
+            size += 252
+            last_training = pd.to_datetime(date)
+
+        # get data from last 252 days
+        data = get_data(date, size)
+
+        # Engineer input data
+        daily_df = engineer_data(data)
+
+        # Train model if needed
+        if training_needed:
+            current_model = train_model(daily_df)
+
+        # Predict with all models and take each mean
+        today_df = daily_df.xs(key=date, level='date').drop(columns=['r1_fwd'])
+        predictions = []
+        for model in current_model:
+            predictions.append(model.predict(today_df.loc[:, model.feature_name()]))
+        prediction = sum(predictions) / len(predictions)
+        today_df = today_df.assign(prediction=prediction)
+
+        # Apply strategy
+        top_predictions = today_df[today_df['prediction'] > 0].nlargest(5, 'prediction')
+        open_positions = dict()
+        if len(top_predictions) == 0:
+            open_positions['cash'] = 1
+        else:
+            # update open_positions
+            allocation = 1 / len(top_predictions)
+            for ticker in top_predictions.index:
+                open_positions[ticker] = allocation
+
+        # Store result in database
+        new_prediction = models.Prediction(date=date, prediction=open_positions)
         models.db.session.add(new_prediction)
         models.db.session.commit()
-        return {"prediction": prediction}
+
+        return open_positions
 
 @api.route('/partial_fit')
 class Train(Resource):
