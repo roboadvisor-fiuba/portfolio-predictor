@@ -9,8 +9,8 @@ Para testear con zipline, ejecutar desde /models/zipline:
 Para entrenar un modelo y generar un pickle (por el momento solo linear regression), ejecutar desde el directorio /models el comando:
 'python3 train_model.py'
 
-Para levantar la API, ejecutar desde el directorio /api el comando:
-'python3 api.py'
+Para levantar la API, ejecutar desde el directorio /app el comando:
+'python3 app.py'
 
 Ejemplos de uso de la API:
 
