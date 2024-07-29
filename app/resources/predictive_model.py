@@ -55,7 +55,7 @@ def train_model(data):
         return df.loc[param_cols]
 
     base_params = dict(boosting='gbdt', objective='regression', verbose=-1)
-    lgb_daily_ic = pd.read_hdf('../notebooks/data/model_tuning.h5', 'lgb/daily_ic')
+    lgb_daily_ic = pd.read_hdf('../notebooks/data/lgbm_tuning.h5', 'lgb/daily_ic') # TODO: reemplazar por valores harcodeados
     models = []
     for position in range(7):
         params = get_lgb_params(lgb_daily_ic,
@@ -77,18 +77,21 @@ def train_model(data):
     return models
 
 def get_data(end, size):
-	n_tickers = 58 # hardcodeado
+    n_tickers = 58 # hardcodeado
 
-	DATA_STORE = '../notebooks/data/assets.h5'
-	ohlcv = ['adj_open', 'adj_close', 'adj_low', 'adj_high', 'adj_volume']
-	with pd.HDFStore(DATA_STORE) as store:
-		prices = (store['merval/prices']
-				.loc[pd.IndexSlice[:end, :], ohlcv]
-				.tail(n=size*n_tickers)
-				.rename(columns=lambda x: x.replace('adj_', ''))
-				.swaplevel()
-				.sort_index())
-	return prices
+    DATA_STORE = '../notebooks/data/assets.h5'
+    ohlcv = ['adj_open', 'adj_close', 'adj_low', 'adj_high', 'adj_volume']
+    with pd.HDFStore(DATA_STORE) as store:
+        # check last available date
+        last_date = store['merval/prices'].tail(1).date
+        # load new dates if necessary
+        prices = (store['merval/prices']
+                .loc[pd.IndexSlice[:end, :], ohlcv]
+                .tail(n=size*n_tickers)
+                .rename(columns=lambda x: x.replace('adj_', ''))
+                .swaplevel()
+                .sort_index())
+    return prices
 
 import talib
 from talib import RSI, BBANDS, MACD, ATR
