@@ -1,5 +1,4 @@
 from flask_restx import Resource, Namespace, fields
-import joblib
 import numpy as np
 import models
 from datetime import datetime
@@ -29,7 +28,7 @@ class LoadModel(Resource):
         data = api.payload
         model_file = data['path']
         try:
-            current_model = joblib.load(model_file) # NOTE: path is relative to the os.cwd(), where the app was executed
+            current_model = None # NOTE: path is relative to the os.cwd(), where the app was executed
         except FileNotFoundError:
             return {"message": "File not found"}, 400
         return {"message": "Model loaded successfully"}
