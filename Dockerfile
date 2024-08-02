@@ -4,6 +4,7 @@ WORKDIR /portfolio-predictor
 
 COPY ./app ./app
 COPY ./models ./models
+COPY ./notebooks/data ./notebooks/data
 
 RUN apt-get update && apt-get install -y curl build-essential
 
