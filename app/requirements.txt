@@ -8,3 +8,4 @@ yfinance
 lightgbm==4.3.0
 pandas==2.0.3
 pandas-datareader==0.10.0
+tables==3.6.1
