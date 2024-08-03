@@ -67,7 +67,7 @@ def train_model(data):
     ]
     models = []
     for position in range(7):
-        params = all_params[position].to_dict()
+        params = all_params[position]
 
         for p in ['min_data_in_leaf', 'num_leaves']:
             params[p] = int(params[p])
