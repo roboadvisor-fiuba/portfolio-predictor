@@ -5,6 +5,14 @@ from datetime import datetime
 import yfinance as yf
 import pandas as pd
 
+# borre joblib para probar pero quedo re desprolijo
+# una vez que funcione la API:
+"""
+- hacer pruebas simples con la API (fechas invalidas y esas cosas)
+- correr backtesting largo
+- emprolijar notebooks y codigo
+- completar diapos
+"""
 api = Namespace('predictive_model', description='Predictive model operations', path='/')
 current_model = None
 last_training = None
@@ -54,7 +62,7 @@ def train_model(data):
         return df.loc[param_cols]
 
     base_params = dict(boosting='gbdt', objective='regression', verbose=-1)
-    lgb_daily_ic = pd.read_hdf('../notebooks/data/lgbm_tuning.h5', 'lgb/daily_ic') # TODO: reemplazar por valores harcodeados
+    lgb_daily_ic = pd.read_hdf('../notebooks/data/model_tuning.h5', 'lgb/daily_ic')
     models = []
     for position in range(7):
         params = get_lgb_params(lgb_daily_ic,
@@ -75,22 +83,90 @@ def train_model(data):
         models.append(model)
     return models
 
-def get_data(end, size):
-    n_tickers = 58 # hardcodeado
+TICKERS = ['MIRG.BA',
+ 'MOLA.BA',
+ 'TXAR.BA',
+ 'CGPA2.BA',
+ 'INTR.BA',
+ 'YPFD.BA',
+ 'SEMI.BA',
+ 'LONG.BA',
+ 'CADO.BA',
+ 'VALO.BA',
+ 'TRAN.BA',
+ 'HAVA.BA',
+ 'CTIO.BA',
+ 'METR.BA',
+ 'CEPU.BA',
+ 'BHIP.BA',
+ 'AUSO.BA',
+ 'LEDE.BA',
+ 'OEST.BA',
+ 'TECO2.BA',
+ 'MOLI.BA',
+ 'CELU.BA',
+ 'INVJ.BA',
+ 'POLL.BA',
+ 'ROSE.BA',
+ 'TGSU2.BA',
+ 'IRSA.BA',
+ 'DGCU2.BA',
+ 'SUPV.BA',
+ 'CARC.BA',
+ 'CAPX.BA',
+ 'PAMP.BA',
+ 'FERR.BA',
+ 'TGNO4.BA',
+ 'PATA.BA',
+ 'EDN.BA',
+ 'GCLA.BA',
+ 'MTR.BA',
+ 'SAMI.BA',
+ 'BMA.BA',
+ 'BPAT.BA',
+ 'GARO.BA',
+ 'MORI.BA',
+ 'BYMA.BA',
+ 'CECO2.BA',
+ 'GGAL.BA',
+ 'GRIM.BA',
+ 'GBAN.BA',
+ 'LOMA.BA',
+ 'DOME.BA',
+ 'DYCA.BA',
+ 'BBAR.BA',
+ 'ALUA.BA',
+ 'COME.BA',
+ 'FIPL.BA',
+ 'GAMI.BA',
+ 'BOLT.BA',
+ 'CRES.BA']
 
-    DATA_STORE = '../notebooks/data/assets.h5'
-    ohlcv = ['adj_open', 'adj_close', 'adj_low', 'adj_high', 'adj_volume']
-    with pd.HDFStore(DATA_STORE) as store:
-        # check last available date
-        last_date = store['merval/prices'].tail(1).date
-        # load new dates if necessary
-        prices = (store['merval/prices']
-                .loc[pd.IndexSlice[:end, :], ohlcv]
-                .tail(n=size*n_tickers)
-                .rename(columns=lambda x: x.replace('adj_', ''))
-                .swaplevel()
-                .sort_index())
-    return prices
+def get_data(end, size):
+	n_tickers = 58 # hardcodeado
+
+	DATA_STORE = '../notebooks/data/assets.h5'
+	ohlcv = ['adj_open', 'adj_close', 'adj_low', 'adj_high', 'adj_volume']
+	with pd.HDFStore(DATA_STORE) as store:
+		last_date = store['merval/prices'].tail(1).index[0][0]
+		first_date = store['merval/prices'].head(1).index[0][0]
+
+		# check if data is enough.
+		end_timestamp = pd.Timestamp(end)
+		if last_date < end_timestamp:
+			# load recent days
+			stock_data = yf.download(TICKERS, start=last_date, end=end, progress=False)
+			# TODO: parsear el resultado de yfinance y cargarlo al final de store['merval/prices']
+			end_timestamp = stock_data.index[-1]
+
+		# load data
+		prices = (store['merval/prices']
+				.loc[pd.IndexSlice[:end, :], ohlcv]
+				.tail(n=size*n_tickers)
+				.rename(columns=lambda x: x.replace('adj_', ''))
+				.swaplevel()
+				.sort_index())
+	return prices
 
 import talib
 from talib import RSI, BBANDS, MACD, ATR
