@@ -54,22 +54,20 @@ def train_model(data):
                        label=data[label],
                        categorical_feature=categoricals,
                        free_raw_data=False)
-    def get_lgb_params(data, t=1, best=0):
-        scope_params = ['lookahead', 'train_length', 'test_length']
-        lgb_train_params = ['learning_rate', 'num_leaves', 'feature_fraction', 'min_data_in_leaf']
-        param_cols = scope_params[1:] + lgb_train_params + ['boost_rounds']
-        df = data[data.lookahead==t].sort_values('ic', ascending=False).iloc[best]
-        return df.loc[param_cols]
 
     base_params = dict(boosting='gbdt', objective='regression', verbose=-1)
-    lgb_daily_ic = pd.read_hdf('../notebooks/data/model_tuning.h5', 'lgb/daily_ic')
+    all_params = [
+        {'learning_rate': 0.01, 'num_leaves': 4.0, 'feature_fraction': 0.3, 'min_data_in_leaf': 250.0, 'boost_rounds': 10.0},
+        {'learning_rate': 0.01, 'num_leaves': 4.0, 'feature_fraction': 0.3, 'min_data_in_leaf': 250.0, 'boost_rounds': 25.0},
+        {'learning_rate': 0.01, 'num_leaves': 4.0, 'feature_fraction': 0.3, 'min_data_in_leaf': 250.0, 'boost_rounds': 50.0},
+        {'learning_rate': 0.01, 'num_leaves': 4.0, 'feature_fraction': 0.3, 'min_data_in_leaf': 250.0, 'boost_rounds': 75.0},
+        {'learning_rate': 0.01, 'num_leaves': 4.0, 'feature_fraction': 0.3, 'min_data_in_leaf': 250.0, 'boost_rounds': 100.0},
+        {'learning_rate': 0.01, 'num_leaves': 4.0, 'feature_fraction': 0.3, 'min_data_in_leaf': 250.0, 'boost_rounds': 150.0},
+        {'learning_rate': 0.01, 'num_leaves': 4.0, 'feature_fraction': 0.3, 'min_data_in_leaf': 250.0, 'boost_rounds': 200.0},
+    ]
     models = []
     for position in range(7):
-        params = get_lgb_params(lgb_daily_ic,
-                                t=lookahead,
-                                best=position)
-
-        params = params.to_dict()
+        params = all_params[position].to_dict()
 
         for p in ['min_data_in_leaf', 'num_leaves']:
             params[p] = int(params[p])
