@@ -7,4 +7,5 @@ etc/
 stock_data.joblib
 
 *.h5
+*.db
 *.csv
