@@ -5,14 +5,6 @@ from datetime import datetime
 import yfinance as yf
 import pandas as pd
 
-# borre joblib para probar pero quedo re desprolijo
-# una vez que funcione la API:
-"""
-- hacer pruebas simples con la API (fechas invalidas y esas cosas)
-- correr backtesting largo
-- emprolijar notebooks y codigo
-- completar diapos
-"""
 api = Namespace('predictive_model', description='Predictive model operations', path='/')
 current_model = None
 last_training = None
