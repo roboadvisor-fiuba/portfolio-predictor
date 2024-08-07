@@ -5,6 +5,14 @@ from datetime import datetime
 import yfinance as yf
 import pandas as pd
 
+# borre joblib para probar pero quedo re desprolijo
+# una vez que funcione la API:
+"""
+- hacer pruebas simples con la API (fechas invalidas y esas cosas)
+- correr backtesting largo
+- emprolijar notebooks y codigo
+- completar diapos
+"""
 api = Namespace('predictive_model', description='Predictive model operations', path='/')
 current_model = None
 last_training = None
@@ -73,64 +81,16 @@ def train_model(data):
         models.append(model)
     return models
 
-TICKERS = ['MIRG.BA',
- 'MOLA.BA',
- 'TXAR.BA',
- 'CGPA2.BA',
- 'INTR.BA',
- 'YPFD.BA',
- 'SEMI.BA',
- 'LONG.BA',
- 'CADO.BA',
- 'VALO.BA',
- 'TRAN.BA',
- 'HAVA.BA',
- 'CTIO.BA',
- 'METR.BA',
- 'CEPU.BA',
- 'BHIP.BA',
- 'AUSO.BA',
- 'LEDE.BA',
- 'OEST.BA',
- 'TECO2.BA',
- 'MOLI.BA',
- 'CELU.BA',
- 'INVJ.BA',
- 'POLL.BA',
- 'ROSE.BA',
- 'TGSU2.BA',
- 'IRSA.BA',
- 'DGCU2.BA',
- 'SUPV.BA',
- 'CARC.BA',
- 'CAPX.BA',
- 'PAMP.BA',
- 'FERR.BA',
- 'TGNO4.BA',
- 'PATA.BA',
- 'EDN.BA',
- 'GCLA.BA',
- 'MTR.BA',
- 'SAMI.BA',
- 'BMA.BA',
- 'BPAT.BA',
- 'GARO.BA',
- 'MORI.BA',
- 'BYMA.BA',
- 'CECO2.BA',
- 'GGAL.BA',
- 'GRIM.BA',
- 'GBAN.BA',
- 'LOMA.BA',
- 'DOME.BA',
- 'DYCA.BA',
- 'BBAR.BA',
- 'ALUA.BA',
- 'COME.BA',
- 'FIPL.BA',
- 'GAMI.BA',
- 'BOLT.BA',
- 'CRES.BA']
+TICKERS = ['ALUA.BA', 'AUSO.BA', 'BBAR.BA', 'BHIP.BA', 'BMA.BA', 'BOLT.BA',
+       'BPAT.BA', 'BYMA.BA', 'CADO.BA', 'CAPX.BA', 'CARC.BA', 'CECO2.BA',
+       'CELU.BA', 'CEPU.BA', 'CGPA2.BA', 'COME.BA', 'CRES.BA', 'CTIO.BA',
+       'DGCU2.BA', 'DOME.BA', 'DYCA.BA', 'EDN.BA', 'FERR.BA', 'FIPL.BA',
+       'GAMI.BA', 'GARO.BA', 'GBAN.BA', 'GCLA.BA', 'GGAL.BA', 'GRIM.BA',
+       'HAVA.BA', 'INTR.BA', 'INVJ.BA', 'IRSA.BA', 'LEDE.BA', 'LOMA.BA',
+       'LONG.BA', 'METR.BA', 'MIRG.BA', 'MOLA.BA', 'MOLI.BA', 'MORI.BA',
+       'MTR.BA', 'OEST.BA', 'PAMP.BA', 'PATA.BA', 'POLL.BA', 'ROSE.BA',
+       'SAMI.BA', 'SEMI.BA', 'SUPV.BA', 'TECO2.BA', 'TGNO4.BA', 'TGSU2.BA',
+       'TRAN.BA', 'TXAR.BA', 'VALO.BA', 'YPFD.BA']
 
 def get_data(end, size):
 	n_tickers = 58 # hardcodeado
